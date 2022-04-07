@@ -1,29 +1,35 @@
 import Foundation
 
 struct Model{
-    private let defualts = UserDefaults.standard
-    private let nameForDefaults = "UserData"
+    private let defaults = UserDefaults.standard
+    private let keyUsers = DefaultsData.users.rawValue
+    private let keyLastLogin = DefaultsData.lastLogin.rawValue
     
     func saveLastLogin(_ login:String){
-        defualts.set(login, forKey: "LastLogin")
+        defaults.set(login, forKey: keyLastLogin)
+    }
+    
+    func getLastLogin() -> String?{
+        guard let login = defaults.string(forKey: keyLastLogin) else {return nil}
+        return login
     }
     
     func unLogin(){
-        defualts.set("", forKey: "LastLogin")
+        defaults.set("", forKey: keyLastLogin)
     }
     
     
     func initialize() -> Bool{
-        guard defualts.dictionary(forKey: nameForDefaults) != nil else {
+        guard defaults.dictionary(forKey: keyUsers) != nil else {
             print("No data")
             print("Adding test case")
             let dict:[String:String] = ["admin":"1234"]
-            defualts.set(dict, forKey: "UserData")
+            defaults.set(dict, forKey: "UserData")
             return false
         }
-        if defualts.string(forKey: "LastLogin") != nil {
-            guard let last = defualts.string(forKey: "LastLogin") else {return false}
-            guard let dictOfUserts = defualts.dictionary(forKey: nameForDefaults) else {return false}
+        if defaults.string(forKey: keyLastLogin) != nil {
+            guard let last = defaults.string(forKey: keyLastLogin) else {return false}
+            guard let dictOfUserts = defaults.dictionary(forKey: keyUsers) else {return false}
             guard let lastPass = dictOfUserts[last] as? String else {return false}
             if login(login: last, password: lastPass) {
                 return true
@@ -33,7 +39,7 @@ struct Model{
     }
     
     func login(login: String, password: String) -> Bool{
-        guard let userList = defualts.dictionary(forKey: nameForDefaults) else {
+        guard let userList = defaults.dictionary(forKey: keyUsers) else {
             print("No userList")
             return false
         }
@@ -50,10 +56,10 @@ struct Model{
     }
     
     func register(login: String, password: String){
-        var dict = defualts.dictionary(forKey: nameForDefaults) as! [String:String]
+        var dict = defaults.dictionary(forKey: keyUsers) as! [String:String]
         if dict[login] == nil {
             dict[login] = password
-            defualts.set(dict, forKey: nameForDefaults)
+            defaults.set(dict, forKey: keyUsers)
         } else {
             print("User with this name is existing")
         }

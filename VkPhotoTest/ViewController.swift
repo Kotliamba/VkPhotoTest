@@ -11,23 +11,30 @@ class ViewController: UIViewController {
 
     private var textFieldLogin: UITextField = {
         let textField = UITextField()
-        textField.placeholder = " Enter your login"
+        textField.placeholder = "Enter your login"
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.layer.borderWidth = 1
         textField.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 1)
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 5
+        textField.autocorrectionType = .no
+        textField.textContentType = .name
+        textField.textColor = .black
         return textField
     }()
     
     private var textFieldPassword: UITextField = {
         let textField = UITextField()
-        textField.placeholder = " Enter your password"
+        textField.placeholder = "Enter your password"
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.layer.borderWidth = 1
         textField.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 1)
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 5
+        textField.autocorrectionType = .no
+        textField.textContentType = .password
+        textField.isSecureTextEntry = true
+        textField.textColor = .black
         return textField
     }()
     
@@ -39,6 +46,10 @@ class ViewController: UIViewController {
         textField.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 1)
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 5
+        textField.autocorrectionType = .no
+        textField.textContentType = .newPassword
+        textField.isSecureTextEntry = true
+        textField.textColor = .black
         return textField
     }()
     
@@ -90,6 +101,8 @@ class ViewController: UIViewController {
     
     var currentTask = Task.login
     
+    private var secondScreenFlag = false
+    
     private var registerConstraints: [NSLayoutConstraint] = []
     private var loginConstraints: [NSLayoutConstraint] = []
     
@@ -106,20 +119,28 @@ class ViewController: UIViewController {
         self.view.addSubview(textFieldVerifyPassword)
         self.view.addSubview(registerButton)
         
-        loginButton.addTarget(self, action: #selector(printTextField), for: .touchUpInside)
+        loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)
         signUpOrSignInButton.addTarget(self, action: #selector(changeView), for: .touchUpInside)
         registerButton.addTarget(self, action: #selector(register), for: .touchUpInside)
         
-        if model.initialize(){
-            print("Model go to second screen")
-        }
+
         
         margins = view.layoutMarginsGuide
         safeArea = view.safeAreaLayoutGuide
         
         makeConstraints(to: .login)
-
         
+        if model.initialize(){
+            secondScreenFlag = true
+        }
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if secondScreenFlag{
+            secondScreenFlag = false
+            goToSecondScreen()
+        }
     }
     
     @objc private func changeView(){
@@ -138,17 +159,30 @@ class ViewController: UIViewController {
         if !login.isEmpty && !pass.isEmpty && !verifedPass.isEmpty {
             if pass == verifedPass{
                 model.register(login: login.lowercased(), password: pass)
+                model.saveLastLogin(login.lowercased())
+                goToSecondScreen()
             }
         }
     }
     
-    @objc private func printTextField(){
+    @objc private func login(){
         guard let login = textFieldLogin.text else {return}
         guard let pass = textFieldPassword.text else {return}
-        if model.login(login: login.lowercased(), password: pass) {
-            print("GoingToSecondScreen")
-            model.saveLastLogin(login.lowercased())
+        if !login.isEmpty && !pass.isEmpty{
+            if model.login(login: login.lowercased(), password: pass) {
+                model.saveLastLogin(login.lowercased())
+                goToSecondScreen()
+            }
         }
+    }
+    
+    private func goToSecondScreen(){
+        let secondVc = SecondViewController()
+        let nav = UINavigationController(rootViewController: secondVc)
+        nav.modalPresentationStyle = .fullScreen
+        
+        present(nav, animated: true)
+        
     }
     
     private func makeConstraints(to task:Task){
@@ -157,6 +191,7 @@ class ViewController: UIViewController {
             textFieldVerifyPassword.isHidden = false
             registerButton.isHidden = false
             signUpOrSignInButton.setTitle("Login", for: .normal)
+            textFieldPassword.textContentType = .newPassword
             
             registerConstraints = [
                 labelAppName.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
@@ -194,6 +229,7 @@ class ViewController: UIViewController {
             registerButton.isHidden = true
             loginButton.isHidden = false
             signUpOrSignInButton.setTitle("Register", for: .normal)
+            textFieldPassword.textContentType = .password
             
             loginConstraints = [
                 labelAppName.centerXAnchor.constraint(equalTo: self.view.centerXAnchor),
