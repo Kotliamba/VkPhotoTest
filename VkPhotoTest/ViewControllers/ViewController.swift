@@ -1,10 +1,3 @@
-//
-//  ViewController.swift
-//  VKPhotoTestCase
-//
-//  Created by Чаусов Николай on 05.04.2022.
-//
-
 import UIKit
 
 class ViewController: UIViewController {
@@ -256,8 +249,4 @@ class ViewController: UIViewController {
         
     }
     
-}
-
-extension ViewController: UITextFieldDelegate {
-
 }

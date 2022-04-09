@@ -1,10 +1,3 @@
-//
-//  AppDelegate.swift
-//  VkPhotoTest
-//
-//  Created by Чаусов Николай on 05.04.2022.
-//
-
 import UIKit
 
 @main

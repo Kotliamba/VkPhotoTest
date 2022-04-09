@@ -1,11 +1,5 @@
-//
-//  SecondViewController.swift
-//  VkPhotoTest
-//
-//  Created by Чаусов Николай on 07.04.2022.
-//
-
 import UIKit
+import Photos
 
 class SecondViewController: UIViewController {
     
@@ -49,12 +43,16 @@ class SecondViewController: UIViewController {
         return collection
     }()
     
-    
+    var imagesCount = 0
+    var images = [UIImage]()
     let viewForLabels = UIView()
     var safeAreaGuide = UILayoutGuide()
+    var counter = 100
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        getPhotos()
+        print(images.count)
 
         view.backgroundColor = .white
         
@@ -86,11 +84,71 @@ class SecondViewController: UIViewController {
         changeAvatarArea.translatesAutoresizingMaskIntoConstraints = false
         changeAvatarArea.backgroundColor = .white
         
+        let tap = UITapGestureRecognizer(target: self, action: #selector(SecondViewController.presentPhotoScreen))
+        currentAvatar.addGestureRecognizer(tap)
+        currentAvatar.isUserInteractionEnabled = true
+        
         makeConstraints()
+        
+        guard let lastAvatar = model.getAvatar() else {return}
+        if !lastAvatar.isEmpty {
+            currentAvatar.image = stringToImage(string: lastAvatar)
+        }
+    }
+    
+    @objc private func presentPhotoScreen(){
+        guard let image = currentAvatar.image else {return}
+        let newVC = PhotoController(image: image)
+        
+        present(newVC, animated: true)
     }
     
     @objc private func goBack(){
         self.dismiss(animated: true)
+    }
+    
+    fileprivate func getPhotos() {
+        let manager = PHImageManager.default()
+        let requestOptions = PHImageRequestOptions()
+        requestOptions.isSynchronous = false
+        requestOptions.deliveryMode = .highQualityFormat
+        let fetchOptions = PHFetchOptions()
+        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+
+        let results: PHFetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
+        self.imagesCount = results.count
+        if results.count <= 100 {
+            self.counter = results.count
+        }
+        if results.count > 0 {
+            for i in 0..<self.counter {
+                let asset = results.object(at: i)
+                let size = CGSize(width: 600, height: 600)
+                manager.requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: requestOptions) { (image, _) in
+                    if let image = image {
+                        self.images.append(image)
+                        self.collectionView.reloadData()
+                        print(self.images.count)
+                    } else {
+                        print("error asset to image")
+                    }
+                }
+            }
+        } else {
+            print("no photos to display")
+        }
+
+    }
+    
+    private func saveNewAvatar(with image: UIImage){
+        let strImage = image.jpegData(compressionQuality: 1)?.base64EncodedString() ?? ""
+        model.setAvatar(string: strImage)
+    }
+    
+    func stringToImage (string: String) -> UIImage? {
+        let imageData = Data(base64Encoded: string)
+        guard let image = UIImage(data: imageData!) else {return nil}
+        return image
     }
     
     private func makeConstraints(){
@@ -128,12 +186,16 @@ class SecondViewController: UIViewController {
 }
 
 extension SecondViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        self.currentAvatar.image = images[indexPath.row]
+        saveNewAvatar(with: images[indexPath.row])
+    }
     
 }
 
 extension SecondViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 25
+        self.counter
     }
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -142,7 +204,11 @@ extension SecondViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MyCell", for: indexPath) as! PhotoCell
-        cell.configurate()
+        if images.count == self.counter {
+            print("Image now", images.count)
+            print("ROw now", indexPath.row)
+            cell.configurate(with: images[indexPath.row])
+        }
         
         return cell
     }

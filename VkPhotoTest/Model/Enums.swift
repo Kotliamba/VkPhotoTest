@@ -6,4 +6,5 @@ enum Task {
 enum DefaultsData: String {
     case users = "UserData"
     case lastLogin = "LastLogin"
+    case avatar = "avatar"
 }

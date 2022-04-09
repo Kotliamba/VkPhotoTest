@@ -1,10 +1,3 @@
-//
-//  SceneDelegate.swift
-//  VkPhotoTest
-//
-//  Created by Чаусов Николай on 05.04.2022.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
