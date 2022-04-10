@@ -5,7 +5,7 @@ class ViewController: UIViewController {
 
     private var textFieldLogin: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "Enter your login"
+        textField.attributedPlaceholder = NSAttributedString(string: "Enter your login", attributes: [NSAttributedString.Key.foregroundColor: UIColor.darkGray])
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.layer.borderWidth = 1
         textField.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 1)
@@ -14,12 +14,13 @@ class ViewController: UIViewController {
         textField.autocorrectionType = .no
         textField.textContentType = .name
         textField.textColor = .black
+
         return textField
     }()
     
     private var textFieldPassword: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "Enter your password"
+        textField.attributedPlaceholder = NSAttributedString(string: "Enter your password", attributes: [NSAttributedString.Key.foregroundColor: UIColor.darkGray])
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.layer.borderWidth = 1
         textField.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 1)
@@ -30,12 +31,13 @@ class ViewController: UIViewController {
         //Some bugs withouts keychain enabled
         textField.isSecureTextEntry = true
         textField.textColor = .black
+
         return textField
     }()
     
     private var textFieldVerifyPassword: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "Verify your password"
+        textField.attributedPlaceholder = NSAttributedString(string: "Verify your password", attributes: [NSAttributedString.Key.foregroundColor: UIColor.darkGray])
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.layer.borderWidth = 1
         textField.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 1)
@@ -116,6 +118,10 @@ class ViewController: UIViewController {
         self.view.addSubview(registerButton)
         
         model.alertDelegate = self
+        
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        
+        view.addGestureRecognizer(tap)
         
         loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)
         signUpOrSignInButton.addTarget(self, action: #selector(changeView), for: .touchUpInside)
@@ -217,6 +223,10 @@ class ViewController: UIViewController {
         
         present(nav, animated: true)
         
+    }
+    
+    @objc func dismissKeyboard() {
+        view.endEditing(true)
     }
     
     private func makeConstraints(to task:Task){
