@@ -10,6 +10,7 @@ class TableCell: UITableViewCell {
     }
     
     func configurate(name: String, image: UIImage?){
+        self.backgroundColor = .white
         label = UILabel(frame: CGRect(x: 0, y: 0, width: self.bounds.width/2, height: self.bounds.height))
         uiImageView = UIImageView(frame: CGRect(x: self.bounds.width/2, y: 0, width: self.bounds.width/2, height: self.bounds.height))
         uiImageView.image = UIImage(named: "placeholder")!
@@ -20,6 +21,7 @@ class TableCell: UITableViewCell {
         contentView.addSubview(uiImageView)
         contentView.addSubview(label)
         label.textAlignment = .center
+        label.textColor = .black
         label.text = name
     }
 

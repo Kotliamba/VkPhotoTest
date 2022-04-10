@@ -6,6 +6,8 @@ class PhotoController: UIViewController {
 
     private var imageView = UIImageView()
     
+    private var safeAreaGuide = UILayoutGuide()
+    
     weak var avatarSetterDelegate: avatarSetterDelegate?
     
     private let exitButton: UIButton = {
@@ -31,8 +33,9 @@ class PhotoController: UIViewController {
         
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(imageView)
-        
+        safeAreaView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(safeAreaView)
+        safeAreaView.addSubview(imageView)
         exitButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         setAvatarButton.addTarget(self, action: #selector(setAvatar), for: .touchUpInside)
         
@@ -41,6 +44,8 @@ class PhotoController: UIViewController {
         
         self.navigationItem.rightBarButtonItem?.tintColor = .black
         self.navigationItem.leftBarButtonItem?.tintColor = .black
+        
+        safeAreaGuide = view.safeAreaLayoutGuide
         
         makeConstraints()
     }
@@ -60,10 +65,15 @@ class PhotoController: UIViewController {
     
     private func makeConstraints(){
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: view.topAnchor),
-            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            safeAreaView.topAnchor.constraint(equalTo: safeAreaGuide.topAnchor),
+            safeAreaView.bottomAnchor.constraint(equalTo: safeAreaGuide.bottomAnchor),
+            safeAreaView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            safeAreaView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            
+            imageView.topAnchor.constraint(equalTo: safeAreaView.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: safeAreaView.bottomAnchor),
+            imageView.leadingAnchor.constraint(equalTo: safeAreaView.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: safeAreaView.trailingAnchor),
         ])
     }
     

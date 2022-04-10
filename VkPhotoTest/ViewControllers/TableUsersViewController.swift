@@ -32,6 +32,8 @@ class TableUsersViewController: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         
+        self.view.backgroundColor = .white
+        tableView.backgroundColor = .white
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(goBack))
         self.navigationItem.leftBarButtonItem?.tintColor = .black
         
