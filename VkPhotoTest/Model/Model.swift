@@ -6,12 +6,17 @@ struct Model{
     private let keyLastLogin = DefaultsData.lastLogin.rawValue
     private let userAvatar = DefaultsData.avatar.rawValue
     
+    weak var alertDelegate: AlertErrorDelegate?
+    
     func saveLastLogin(_ login:String){
         defaults.set(login, forKey: keyLastLogin)
     }
     
     func getLastLogin() -> String?{
-        guard let login = defaults.string(forKey: keyLastLogin) else {return nil}
+        guard let login = defaults.string(forKey: keyLastLogin) else {
+            alertDelegate?.presentAlert(reason: .defaultsFall)
+            return nil
+        }
         return login
     }
     
@@ -20,15 +25,21 @@ struct Model{
     }
     
     func setAvatar(string: String){
-        guard let currentUser = getLastLogin() else {return}
+        guard let currentUser = getLastLogin() else {
+            alertDelegate?.presentAlert(reason: .defaultsFall)
+            return
+        }
         var dictOfAvatars = defaults.dictionary(forKey: userAvatar) as! [String:String]
         dictOfAvatars[currentUser] = string
         defaults.set(dictOfAvatars, forKey: userAvatar)
     }
     
     func getAvatar() -> String? {
-        guard let currentUser = getLastLogin() else {return nil}
-        let dictOfAvatars = defaults.dictionary(forKey: userAvatar) as! [String:String]
+        guard let currentUser = getLastLogin() else {
+            alertDelegate?.presentAlert(reason: .defaultsFall)
+            return nil
+        }
+        guard let dictOfAvatars = defaults.dictionary(forKey: userAvatar) as? [String:String] else {return nil}
         return dictOfAvatars[currentUser]
     }
     
@@ -38,8 +49,6 @@ struct Model{
             defaults.set(dictOfAvatars, forKey: userAvatar)
         }
         guard defaults.dictionary(forKey: keyUsers) != nil else {
-            print("No data")
-            print("Adding test case")
             let dict:[String:String] = ["admin":"1234"]
             defaults.set(dict, forKey: keyUsers)
             return false
@@ -57,18 +66,17 @@ struct Model{
     
     func login(login: String, password: String) -> Bool{
         guard let userList = defaults.dictionary(forKey: keyUsers) else {
-            print("No userList")
+            alertDelegate?.presentAlert(reason: .defaultsFall)
             return false
         }
-        print(userList)
         guard let currentUser = userList[login] else {
-            print("Wrong User")
+            alertDelegate?.presentAlert(reason: .wrongUser)
             return false
         }
         if currentUser as! String == password {
-            print("U can go")
             return true
         }
+        alertDelegate?.presentAlert(reason: .loginAndPassDoesnotMatch)
         return false
     }
     
@@ -78,8 +86,18 @@ struct Model{
             dict[login] = password
             defaults.set(dict, forKey: keyUsers)
         } else {
-            print("User with this name is existing")
+            alertDelegate?.presentAlert(reason: .userAlreadyExist)
         }
+    }
+    
+    func getListOfUsers() -> [String:String]? {
+        guard let avatars = defaults.dictionary(forKey: userAvatar) as? [String:String] else {
+                alertDelegate?.presentAlert(reason: .defaultsFall)
+                return nil
+            
+        }
+        
+        return avatars
     }
     
 }

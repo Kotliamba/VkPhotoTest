@@ -1,9 +1,14 @@
 import UIKit
 import Photos
 
+protocol avatarSetterDelegate: AnyObject {
+    func setAvatar(_ newImage: UIImage?)
+}
+
+
 class SecondViewController: UIViewController {
     
-    var model = Model()
+    private var model = Model()
     
     private let exitButton: UIButton = {
         let button = UIButton()
@@ -13,16 +18,24 @@ class SecondViewController: UIViewController {
         return button
     }()
     
-    let safeAreaView = UIView()
-    let changeAvatarArea = UIView()
-    let currentAvatar : UIImageView = {
+    private let allUsersButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("Users", for: .normal)
+        button.setTitleColor(UIColor.black, for: .normal)
+        
+        return button
+    }()
+    
+    private let safeAreaView = UIView()
+    private let changeAvatarArea = UIView()
+    private let currentAvatar : UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(named: "placeholder")
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
     
-    let nameLabel: UILabel = {
+    private let nameLabel: UILabel = {
         let label = UILabel()
         label.text = "Name"
         label.textColor = .black
@@ -33,7 +46,7 @@ class SecondViewController: UIViewController {
         return label
     }()
     
-    let collectionView: UICollectionView = {
+    private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         let collection = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -43,15 +56,15 @@ class SecondViewController: UIViewController {
         return collection
     }()
     
-    var imagesCount = 0
-    var images = [UIImage]()
-    let viewForLabels = UIView()
-    var safeAreaGuide = UILayoutGuide()
-    var counter = 100
+    private var imagesCount = 0
+    private var images = [UIImage]()
+    private let viewForLabels = UIView()
+    private var safeAreaGuide = UILayoutGuide()
+    private var counter = 100
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        getPhotos()
+
         print(images.count)
 
         view.backgroundColor = .white
@@ -62,20 +75,23 @@ class SecondViewController: UIViewController {
         changeAvatarArea.addSubview(viewForLabels)
         viewForLabels.addSubview(nameLabel)
         safeAreaView.addSubview(collectionView)
+        model.alertDelegate = self
         
         collectionView.register(PhotoCell.self, forCellWithReuseIdentifier: "MyCell")
         
         collectionView.delegate = self
         collectionView.dataSource = self
         
+        allUsersButton.addTarget(self, action: #selector(showAllUsers), for: .touchUpInside)
         exitButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: exitButton)
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: allUsersButton)
         
         safeAreaGuide = view.safeAreaLayoutGuide
         
         
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.text = model.getLastLogin()
+        nameLabel.text = model.getLastLogin()?.capitalized
         viewForLabels.backgroundColor = .white
         viewForLabels.translatesAutoresizingMaskIntoConstraints = false
         currentAvatar.translatesAutoresizingMaskIntoConstraints = false
@@ -84,37 +100,69 @@ class SecondViewController: UIViewController {
         changeAvatarArea.translatesAutoresizingMaskIntoConstraints = false
         changeAvatarArea.backgroundColor = .white
         
-        let tap = UITapGestureRecognizer(target: self, action: #selector(SecondViewController.presentPhotoScreen))
-        currentAvatar.addGestureRecognizer(tap)
-        currentAvatar.isUserInteractionEnabled = true
+        setBaseAvatar()
         
         makeConstraints()
         
-        guard let lastAvatar = model.getAvatar() else {return}
+        fetchPhotoPrivacyStatus(PHPhotoLibrary.authorizationStatus())
+        getPhotos()
+    }
+    
+    private func setBaseAvatar(){
+        guard let lastAvatar = model.getAvatar() else {
+            guard let baseAvatar = UIImage(named: "placeholder") else {
+                presentAlert(reason: .defaultsFall)
+                return
+            }
+            saveNewAvatar(with: baseAvatar)
+            return
+        }
         if !lastAvatar.isEmpty {
-            currentAvatar.image = stringToImage(string: lastAvatar)
+            currentAvatar.image = Converter.stringToImage(string: lastAvatar)
         }
     }
     
-    @objc private func presentPhotoScreen(){
-        guard let image = currentAvatar.image else {return}
-        let newVC = PhotoController(image: image)
+    @objc private func showAllUsers(){
+        let tableVC = TableUsersViewController()
         
-        present(newVC, animated: true)
+        navigationController?.pushViewController(tableVC, animated: true)
+    }
+    
+    @objc private func presentPhotoScreen(with image: UIImage){
+        let newVC = PhotoController(image: image)
+        newVC.avatarSetterDelegate = self
+        
+        navigationController?.pushViewController(newVC, animated: true)
     }
     
     @objc private func goBack(){
         self.dismiss(animated: true)
     }
     
-    fileprivate func getPhotos() {
+    private func fetchPhotoPrivacyStatus(_ status: PHAuthorizationStatus){
+        switch status {
+        case .notDetermined:
+            presentAlert(reason: .noPermission)
+        case .restricted:
+            presentAlert(reason: .noPermission)
+        case .denied:
+            presentAlert(reason: .noPermission)
+        case .authorized:
+            break
+        case .limited:
+            break
+        @unknown default:
+            presentAlert(reason: .noPermission)
+        }
+    }
+    
+    private func getPhotos() {
         let manager = PHImageManager.default()
         let requestOptions = PHImageRequestOptions()
         requestOptions.isSynchronous = false
         requestOptions.deliveryMode = .highQualityFormat
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-
         let results: PHFetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
         self.imagesCount = results.count
         if results.count <= 100 {
@@ -122,20 +170,18 @@ class SecondViewController: UIViewController {
         }
         if results.count > 0 {
             for i in 0..<self.counter {
-                let asset = results.object(at: i)
-                let size = CGSize(width: 600, height: 600)
-                manager.requestImage(for: asset, targetSize: size, contentMode: .aspectFill, options: requestOptions) { (image, _) in
+                let object = results.object(at: i)
+                manager.requestImage(for: object, targetSize: CGSize(width: 600, height: 600), contentMode: .aspectFill, options: requestOptions) { (image, _) in
                     if let image = image {
                         self.images.append(image)
                         self.collectionView.reloadData()
-                        print(self.images.count)
                     } else {
-                        print("error asset to image")
+                        self.presentAlert(reason: .imageLoadFalled)
                     }
                 }
             }
         } else {
-            print("no photos to display")
+            self.presentAlert(reason: .noImages)
         }
 
     }
@@ -143,12 +189,6 @@ class SecondViewController: UIViewController {
     private func saveNewAvatar(with image: UIImage){
         let strImage = image.jpegData(compressionQuality: 1)?.base64EncodedString() ?? ""
         model.setAvatar(string: strImage)
-    }
-    
-    func stringToImage (string: String) -> UIImage? {
-        let imageData = Data(base64Encoded: string)
-        guard let image = UIImage(data: imageData!) else {return nil}
-        return image
     }
     
     private func makeConstraints(){
@@ -187,15 +227,16 @@ class SecondViewController: UIViewController {
 
 extension SecondViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        self.currentAvatar.image = images[indexPath.row]
-        saveNewAvatar(with: images[indexPath.row])
+        let image = images[indexPath.row]
+        presentPhotoScreen(with: image)
     }
     
 }
 
 extension SecondViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        self.counter
+        
+        return self.counter
     }
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -205,11 +246,8 @@ extension SecondViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "MyCell", for: indexPath) as! PhotoCell
         if images.count == self.counter {
-            print("Image now", images.count)
-            print("ROw now", indexPath.row)
             cell.configurate(with: images[indexPath.row])
         }
-        
         return cell
     }
     
@@ -231,3 +269,14 @@ extension SecondViewController: UICollectionViewDelegateFlowLayout {
         return 2
     }
 }
+
+extension SecondViewController: avatarSetterDelegate {
+    func setAvatar(_ newImage: UIImage?) {
+        if newImage != nil {
+            self.currentAvatar.image = newImage!
+            self.saveNewAvatar(with: newImage!)
+        }
+    }
+}
+
+

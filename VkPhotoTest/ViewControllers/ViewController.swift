@@ -1,4 +1,5 @@
 import UIKit
+import Photos
 
 class ViewController: UIViewController {
 
@@ -25,7 +26,8 @@ class ViewController: UIViewController {
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 5
         textField.autocorrectionType = .no
-        textField.textContentType = .password
+        //textField.textContentType = .password
+        //Some bugs withouts keychain enabled
         textField.isSecureTextEntry = true
         textField.textColor = .black
         return textField
@@ -40,7 +42,8 @@ class ViewController: UIViewController {
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 5
         textField.autocorrectionType = .no
-        textField.textContentType = .newPassword
+        //textField.textContentType = .newPassword
+        //Some bugs withouts keychain enabled
         textField.isSecureTextEntry = true
         textField.textColor = .black
         return textField
@@ -87,12 +90,12 @@ class ViewController: UIViewController {
         return button
     }()
     
-    var model = Model()
+    private var model = Model()
     
-    var margins = UILayoutGuide()
-    var safeArea = UILayoutGuide()
+    private var margins = UILayoutGuide()
+    private var safeArea = UILayoutGuide()
     
-    var currentTask = Task.login
+    private var currentTask = Task.login
     
     private var secondScreenFlag = false
     
@@ -112,12 +115,12 @@ class ViewController: UIViewController {
         self.view.addSubview(textFieldVerifyPassword)
         self.view.addSubview(registerButton)
         
+        model.alertDelegate = self
+        
         loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)
         signUpOrSignInButton.addTarget(self, action: #selector(changeView), for: .touchUpInside)
         registerButton.addTarget(self, action: #selector(register), for: .touchUpInside)
-        
-
-        
+                
         margins = view.layoutMarginsGuide
         safeArea = view.safeAreaLayoutGuide
         
@@ -126,6 +129,19 @@ class ViewController: UIViewController {
         if model.initialize(){
             secondScreenFlag = true
         }
+        
+        askForPhotoPermission()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        clearTextFields()
+    }
+    
+    private func clearTextFields(){
+        textFieldLogin.text = ""
+        textFieldPassword.text = ""
+        textFieldVerifyPassword.text = ""
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -149,18 +165,27 @@ class ViewController: UIViewController {
         guard let login = textFieldLogin.text else {return}
         guard let pass = textFieldPassword.text else {return}
         guard let verifedPass = textFieldVerifyPassword.text else {return}
+        checkTextField(login: login, pass: pass, verifyPass: verifedPass)
         if !login.isEmpty && !pass.isEmpty && !verifedPass.isEmpty {
             if pass == verifedPass{
                 model.register(login: login.lowercased(), password: pass)
                 model.saveLastLogin(login.lowercased())
                 goToSecondScreen()
+            } else {
+                presentAlert(reason: .passwordDoesNotMatch)
             }
         }
     }
     
+    private func askForPhotoPermission(){
+        let _: PHFetchResult = PHAsset.fetchAssets(with: .image, options: PHFetchOptions())
+    }
+    
     @objc private func login(){
-        guard let login = textFieldLogin.text else {return}
+        guard let loginSample = textFieldLogin.text else {return}
+        let login = loginSample.trimmingCharacters(in: .whitespaces)
         guard let pass = textFieldPassword.text else {return}
+        checkTextField(login: login, pass: pass, verifyPass: nil)
         if !login.isEmpty && !pass.isEmpty{
             if model.login(login: login.lowercased(), password: pass) {
                 model.saveLastLogin(login.lowercased())
@@ -169,7 +194,23 @@ class ViewController: UIViewController {
         }
     }
     
+    private func checkTextField(login: String, pass: String, verifyPass: String?){
+        if login.isEmpty {
+            presentAlert(reason: .noLogin)
+        }
+        if pass.isEmpty {
+            presentAlert(reason: .noPassword)
+        }
+        if verifyPass != nil {
+            if verifyPass!.isEmpty {
+                presentAlert(reason: .noPassword)
+            }
+        }
+    }
+    
     private func goToSecondScreen(){
+ 
+        
         let secondVc = SecondViewController()
         let nav = UINavigationController(rootViewController: secondVc)
         nav.modalPresentationStyle = .fullScreen
@@ -180,6 +221,7 @@ class ViewController: UIViewController {
     
     private func makeConstraints(to task:Task){
         if task == .register {
+            clearTextFields()
             loginButton.isHidden = true
             textFieldVerifyPassword.isHidden = false
             registerButton.isHidden = false
@@ -218,6 +260,7 @@ class ViewController: UIViewController {
             NSLayoutConstraint.deactivate(loginConstraints)
             NSLayoutConstraint.activate(registerConstraints)
         } else {
+            clearTextFields()
             textFieldVerifyPassword.isHidden = true
             registerButton.isHidden = true
             loginButton.isHidden = false
@@ -250,3 +293,6 @@ class ViewController: UIViewController {
     }
     
 }
+
+
+

@@ -4,7 +4,9 @@ class PhotoController: UIViewController {
     
     private var safeAreaView = UIView()
 
-    var imageView = UIImageView()
+    private var imageView = UIImageView()
+    
+    weak var avatarSetterDelegate: avatarSetterDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -15,9 +17,22 @@ class PhotoController: UIViewController {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
         
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(goBack))
+        
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(setAvatar))
+        
+        self.navigationItem.rightBarButtonItem?.tintColor = .black
+        self.navigationItem.leftBarButtonItem?.tintColor = .black
+        
         makeConstraints()
-        
-        
+    }
+    
+    @objc private func setAvatar(){
+        avatarSetterDelegate?.setAvatar(imageView.image)
+    }
+    
+    @objc private func goBack(){
+        navigationController?.popViewController(animated: true)
     }
     
     convenience init(image: UIImage){
