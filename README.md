@@ -9,7 +9,7 @@ At the first Screen you can login or rigister. Btw, app already has a first memb
 ![image](https://user-images.githubusercontent.com/80983073/162625754-4c6f7b4c-700f-4dc8-bb80-a4cc743891ff.png)
 ![image](https://user-images.githubusercontent.com/80983073/162625763-cda26157-a242-4ec3-87c6-6385248aeb2d.png)
 
-On the second screen, you will see the last 100 photos from your library or the ones you choose. Here you also can exit to first screen or see all users of the app by clicking on "Exit" or "Users".
+On the second screen, you will see the last 100 photos from your library or the ones you choose (photos can load for a time like 5-10 second). Here you also can exit to first screen or see all users of the app by clicking on "Exit" or "Users".
 
 ![image](https://user-images.githubusercontent.com/80983073/162625779-db4e0187-ed2b-49f2-be7f-a7afbca4e056.png)
 
