@@ -8,6 +8,22 @@ class PhotoController: UIViewController {
     
     weak var avatarSetterDelegate: avatarSetterDelegate?
     
+    private let exitButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("Back", for: .normal)
+        button.setTitleColor(UIColor.black, for: .normal)
+        
+        return button
+    }()
+    
+    private let setAvatarButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("Set Avatar", for: .normal)
+        button.setTitleColor(UIColor.black, for: .normal)
+        
+        return button
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -17,9 +33,11 @@ class PhotoController: UIViewController {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(imageView)
         
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(goBack))
+        exitButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        setAvatarButton.addTarget(self, action: #selector(setAvatar), for: .touchUpInside)
         
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(setAvatar))
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: exitButton)
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: setAvatarButton)
         
         self.navigationItem.rightBarButtonItem?.tintColor = .black
         self.navigationItem.leftBarButtonItem?.tintColor = .black
